@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b0b0c" media="(prefers-color-scheme: dark)">
+  <title>Quiz Maker</title>
+  <meta name="description" content="Zamień PDF i własną bazę pytań w quiz ABCD z wyjaśnieniami i odnośnikami do stron.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232563eb'/><path d='M9 16.5l4.5 4.5L23 11.5' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4m0 0L7.5 8.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4l1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  </svg>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="./">
+        <span class="brand-mark" aria-hidden="true"></span>
+        Quiz Maker
+      </a>
+      <div class="topbar-actions">
+        <button id="conn-pill" class="model-btn" type="button" title="Model AI i status połączenia">
+          <span id="conn-dot" class="status-dot"></span>
+          <span id="conn-label">Model AI</span>
+        </button>
+        <button id="btn-theme" class="icon-btn" type="button" aria-label="Zmień motyw">
+          <svg class="icon icon-moon"><use href="#i-moon"/></svg>
+          <svg class="icon icon-sun"><use href="#i-sun"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <ol class="steps" id="steps" aria-label="Postęp">
+      <li data-step="upload"><span class="step-num">1</span><span class="step-label">Materiał</span></li>
+      <li data-step="setup"><span class="step-num">2</span><span class="step-label">Ustawienia</span></li>
+      <li data-step="quiz"><span class="step-num">3</span><span class="step-label">Quiz</span></li>
+      <li data-step="summary"><span class="step-num">4</span><span class="step-label">Wynik</span></li>
+    </ol>
+
+    <!-- Ekran 1: upload -->
+    <section id="screen-upload" class="screen active">
+      <header class="page-head">
+        <h1>Quiz z dowolnego PDF</h1>
+        <p class="lead">Wgraj materiał źródłowy. Strona zamieni go na tekst, oceni, czy nadaje się na quiz jednokrotnego wyboru,
+          i przygotuje pytania z odnośnikami do stron. W następnym kroku możesz dodać własną bazę pytań.</p>
+      </header>
+
+      <div id="ai-hint" class="callout" hidden>
+        <div>
+          <strong>Połącz model AI</strong>
+          <p>Do oceny dokumentu i układania pytań potrzebny jest klucz API Gemini (darmowy) lub Claude.</p>
+        </div>
+        <button id="btn-open-ai" class="btn btn-secondary" type="button">Skonfiguruj</button>
+      </div>
+
+      <label id="dropzone" class="dropzone" for="file-input">
+        <input id="file-input" type="file" accept="application/pdf,.pdf" hidden>
+        <svg class="icon icon-lg"><use href="#i-upload"/></svg>
+        <span class="dz-title"><span class="dz-desktop">Przeciągnij plik PDF lub kliknij, aby wybrać</span><span class="dz-touch">Wybierz plik PDF</span></span>
+        <span class="dz-sub">Plik musi zawierać warstwę tekstową. Skany bez OCR nie są obsługiwane.</span>
+      </label>
+
+      <div id="recent" class="card recent" hidden>
+        <div class="card-head">
+          <h2>Wcześniej używane pliki</h2>
+        </div>
+        <p class="muted">Pliki zapisane w tej przeglądarce. Otwarcie nie wymaga ponownego wgrywania, a zapisana ocena, pula pytań i bazy pytań nie zużywają tokenów.</p>
+        <label class="field">
+          <span class="field-label">Plik</span>
+          <select id="recent-select"></select>
+        </label>
+        <p id="recent-meta" class="muted small"></p>
+        <div class="actions">
+          <button id="btn-recent-delete" class="btn btn-ghost" type="button">Usuń z listy</button>
+          <button id="btn-recent-open" class="btn btn-primary" type="button">Otwórz</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ekran 2: analiza + ustawienia -->
+    <section id="screen-setup" class="screen">
+      <div class="card">
+        <div class="file-row">
+          <svg class="icon file-icon"><use href="#i-file"/></svg>
+          <div class="file-meta">
+            <h2 id="doc-name" class="break">dokument.pdf</h2>
+            <p id="doc-meta" class="muted"></p>
+          </div>
+          <button id="btn-download-md" class="btn btn-secondary btn-sm" type="button">
+            <svg class="icon"><use href="#i-download"/></svg><span>Markdown</span>
+          </button>
+        </div>
+        <p id="cache-note" class="note note-ok" hidden></p>
+        <details class="disclosure">
+          <summary><svg class="icon chevron"><use href="#i-chevron"/></svg>Podgląd tekstu</summary>
+          <pre id="md-output"></pre>
+        </details>
+      </div>
+
+      <div id="assessment" class="card">
+        <div class="card-head">
+          <h2>Ocena dokumentu</h2>
+          <button id="btn-assess" class="btn btn-ghost btn-sm" type="button" hidden>Oceń ponownie</button>
+        </div>
+        <div id="assessment-body" class="muted">Oczekuje na analizę.</div>
+      </div>
+
+      <div id="bank" class="card">
+        <div class="card-head">
+          <h2>Własna baza pytań</h2>
+          <span class="tag">opcjonalnie</span>
+        </div>
+        <p class="muted">PDF, TXT, MD, CSV lub JSON albo wklejony tekst. Pytania mogą mieć warianty i zaznaczone odpowiedzi.
+          AI dopasuje je do materiału, uzupełni braki i znajdzie fragment źródłowy ze stroną.</p>
+        <div id="bank-empty">
+          <label class="dropzone dropzone-sm" for="bank-input">
+            <input id="bank-input" type="file" accept=".pdf,.txt,.md,.markdown,.csv,.json,application/pdf,text/plain,text/markdown,text/csv,application/json" hidden>
+            <svg class="icon"><use href="#i-upload"/></svg>
+            <span class="dz-title">Wybierz plik z pytaniami</span>
+          </label>
+          <details class="disclosure">
+            <summary><svg class="icon chevron"><use href="#i-chevron"/></svg>Wklej pytania jako tekst</summary>
+            <textarea id="bank-text" placeholder="1. Czym jest mitochondrium?&#10;A) ...&#10;B) ...&#10;Odp: B&#10;&#10;2. Kto opisał komórkę?"></textarea>
+            <button id="btn-bank-paste" class="btn btn-secondary" type="button">Wczytaj pytania</button>
+          </details>
+        </div>
+        <div id="bank-loaded" class="bank-loaded" hidden>
+          <div>
+            <strong id="bank-summary">Wczytano 0 pytań</strong>
+            <p id="bank-details" class="muted"></p>
+          </div>
+          <button id="btn-bank-remove" class="btn btn-ghost btn-sm" type="button">Usuń</button>
+        </div>
+      </div>
+
+      <div id="settings" class="card">
+        <div class="card-head">
+          <h2>Ustawienia quizu</h2>
+          <span class="muted small">zapisują się w przeglądarce</span>
+        </div>
+
+        <div id="source-group" class="field" hidden>
+          <span class="field-label">Źródło pytań</span>
+          <div class="segmented" role="radiogroup">
+            <label><input type="radio" name="qsource" value="mixed"><span>Moje i AI</span></label>
+            <label><input type="radio" name="qsource" value="own"><span>Tylko moje</span></label>
+            <label><input type="radio" name="qsource" value="generated"><span>Tylko AI</span></label>
+          </div>
+        </div>
+
+        <div class="toggles">
+          <label class="toggle">
+            <span class="toggle-text"><span class="toggle-title">Mieszanie pytań</span><span class="toggle-desc">Losowa kolejność zamiast kolejności z dokumentu</span></span>
+            <input id="set-shuffle" type="checkbox" role="switch">
+          </label>
+          <label class="toggle">
+            <span class="toggle-text"><span class="toggle-title">Mieszanie odpowiedzi</span><span class="toggle-desc">Losowa kolejność wariantów A–D</span></span>
+            <input id="set-shuffle-answers" type="checkbox" role="switch">
+          </label>
+          <label class="toggle">
+            <span class="toggle-text"><span class="toggle-title">Pytania otwarte</span><span class="toggle-desc">Około 30% pytań bez wariantów, oceniane przez AI</span></span>
+            <input id="set-open" type="checkbox" role="switch">
+          </label>
+          <label class="toggle">
+            <span class="toggle-text"><span class="toggle-title">Tryb oszczędny</span><span class="toggle-desc">Gdy skończą się niewidziane pytania, używaj zapisanych zamiast generować nowe</span></span>
+            <input id="set-saver" type="checkbox" role="switch">
+          </label>
+        </div>
+
+        <div class="counts">
+          <label id="count-field" class="field">
+            <span class="field-label">Liczba pytań AI</span>
+            <input id="set-count" type="number" inputmode="numeric" min="1" max="100" step="1">
+          </label>
+          <label id="own-count-field" class="field" hidden>
+            <span class="field-label">Liczba Twoich pytań</span>
+            <input id="set-own-count" type="number" inputmode="numeric" min="1" step="1">
+          </label>
+        </div>
+
+        <p id="count-hint" class="note note-warn" hidden></p>
+
+        <div id="pool-box" class="pool" hidden>
+          <p id="pool-info"></p>
+          <button id="btn-clear-pool" class="link-btn" type="button">Wyczyść zapisane dane tego pliku</button>
+        </div>
+
+        <div class="actions">
+          <button id="btn-back-upload" class="btn btn-ghost" type="button">Inny plik</button>
+          <button id="btn-generate" class="btn btn-primary" type="button" disabled>Generuj quiz</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ekran 3: quiz -->
+    <section id="screen-quiz" class="screen">
+      <div class="quiz-meta">
+        <span id="q-counter">Pytanie 1 z 10</span>
+        <span id="q-type"></span>
+      </div>
+      <div class="progress" aria-hidden="true"><div id="progress-bar"></div></div>
+      <div class="card question-card">
+        <h2 id="q-text" class="question break"></h2>
+        <div id="q-answers" class="answers"></div>
+      </div>
+      <div id="q-dots" class="qnav" aria-label="Przejdź do pytania"></div>
+      <nav class="quiz-nav">
+        <button id="btn-prev" class="btn btn-secondary" type="button">Wstecz</button>
+        <button id="btn-finish" class="btn btn-ghost" type="button">Zakończ</button>
+        <button id="btn-next" class="btn btn-primary" type="button">Dalej</button>
+      </nav>
+    </section>
+
+    <!-- Ekran 4: podsumowanie -->
+    <section id="screen-summary" class="screen">
+      <div id="summary"></div>
+      <div class="actions actions-start">
+        <button id="btn-retry" class="btn btn-primary" type="button">Powtórz quiz</button>
+        <button id="btn-regenerate" class="btn btn-secondary" type="button">Nowy quiz</button>
+        <button id="btn-new-pdf" class="btn btn-ghost" type="button">Inny plik</button>
+      </div>
+    </section>
+
+    <footer id="usage-bar" class="usage-bar" hidden></footer>
+  </main>
+
+  <!-- Model AI i klucz -->
+  <dialog id="api-dialog" class="dialog" aria-labelledby="api-title">
+    <form id="api-form" class="dialog-body">
+      <div class="dialog-head">
+        <h2 id="api-title">Model AI</h2>
+        <span id="api-status" class="tag"></span>
+        <button id="btn-close-api" class="icon-btn" type="button" aria-label="Zamknij"><svg class="icon"><use href="#i-x"/></svg></button>
+      </div>
+
+      <div class="field">
+        <span class="field-label">Dostawca</span>
+        <div class="segmented" role="radiogroup">
+          <label><input type="radio" name="provider" value="gemini"><span>Gemini</span></label>
+          <label><input type="radio" name="provider" value="claude"><span>Claude</span></label>
+        </div>
+      </div>
+      <label class="field">
+        <span class="field-label">Model</span>
+        <select id="api-model"></select>
+      </label>
+      <label class="field">
+        <span class="field-label">Klucz API</span>
+        <input id="api-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <span class="field-help"><span id="key-hint"></span>. <a id="key-link" href="#" target="_blank" rel="noopener">Wygeneruj klucz</a></span>
+      </label>
+
+      <div id="conn-status" class="conn-status" role="status"></div>
+
+      <p class="fine-print">Klucze są zapisywane wyłącznie w tej przeglądarce i wysyłane bezpośrednio do Google lub Anthropic.
+        Nie umieszczaj ich w repozytorium ani w plikach strony – na GitHub Pages każdy mógłby je odczytać.
+        W darmowym planie Gemini Google może wykorzystywać przesłane treści do ulepszania modeli.</p>
+
+      <div class="dialog-actions">
+        <button id="btn-save-key" class="btn btn-primary" type="submit">Zapisz i sprawdź połączenie</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="loader" class="loader" hidden>
+    <div class="loader-box">
+      <div class="spinner"></div>
+      <div id="loader-text">Przetwarzanie…</div>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
